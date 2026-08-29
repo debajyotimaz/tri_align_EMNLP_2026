@@ -1,7 +1,5 @@
 # Bridging the Code-Mix Gap: Representational Dynamics and Trilingual Alignment in Multilingual Encoders
 
-> **ACL Submission** · Code-Mixed NLP · Cross-Lingual Representation Learning
-
 ---
 
 ## Overview
@@ -20,7 +18,7 @@ This repository accompanies our study on how multilingual encoder-based language
 ## Repository Structure
 
 ```
-CODE-ACL/
+Neither_here_nor_there/
 │
 ├── Data/
 │   ├── Cleaned-Data/
@@ -143,13 +141,13 @@ python dot-product-retrieval-faiss.py
 
 **Layer-wise CKA** — Centered Kernel Alignment between language representation matrices per layer:
 ```bash
-cd Interpretibility/similarity_scores
+cd "Interpretibility/similarity scores"
 python cka.py
 ```
 
 **Layer-wise SVCCA** (Figure 9):
 ```bash
-cd Interpretibility/similarity_scores
+cd "Interpretibility/similarity scores"
 python svcca.py
 ```
 
