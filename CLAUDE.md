@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Research codebase for the EMNLP 2026 paper "Neither Here Nor There: Cross-Lingual Representation Dynamics of Code-Mixed Text in Multilingual Encoders" (arXiv:2603.19771), on cross-lingual representation alignment in multilingual encoders, focusing on Hindi-English code-mixed (Hinglish) text. The project studies how models like mBERT and XLM-R represent code-mixed text and introduces Trilingual Post-Training Alignment (TPA) — a post-training objective combining MLM/NSP with cosine alignment loss.
+Research codebase for the EMNLP Findings 2026 paper "Neither Here Nor There: Cross-Lingual Representation Dynamics of Code-Mixed Text in Multilingual Encoders" (arXiv:2603.19771), on cross-lingual representation alignment in multilingual encoders, focusing on Hindi-English code-mixed (Hinglish) text. The project studies how models like mBERT and XLM-R represent code-mixed text and introduces Trilingual Post-Training Alignment (TPA) — a post-training objective combining MLM/NSP with cosine alignment loss.
 
 ## Setup
 

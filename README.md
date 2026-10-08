@@ -1,7 +1,7 @@
 # Neither Here Nor There: Cross-Lingual Representation Dynamics of Code-Mixed Text in Multilingual Encoders
 
 [![arXiv](https://img.shields.io/badge/arXiv-2603.19771-b31b1b.svg)](https://arxiv.org/abs/2603.19771)
-[![EMNLP 2026](https://img.shields.io/badge/EMNLP-2026-1f6feb.svg)](https://arxiv.org/abs/2603.19771)
+[![EMNLP Findings 2026](https://img.shields.io/badge/EMNLP-Findings%202026-1f6feb.svg)](https://arxiv.org/abs/2603.19771)
 [![Hugging Face Dataset](https://img.shields.io/badge/Hugging%20Face-Dataset-yellow.svg)](https://huggingface.co/datasets/debajyotimaz/trilingual-hinglish-corpus)
 [![Project Page](https://img.shields.io/badge/Project-Page-2ea44f.svg)](https://debajyotimaz.github.io/tri_align_EMNLP_2026/)
 
@@ -9,7 +9,7 @@
 
 **Debajyoti Mazumder, Divyansh Pathak, Prashant Kodali, Jasabanta Patro**
 
-**Preprint:** <https://arxiv.org/abs/2603.19771>. Accepted at **EMNLP 2026**.
+**Preprint:** <https://arxiv.org/abs/2603.19771>. Accepted at **EMNLP Findings 2026**.
 
 ---
 
