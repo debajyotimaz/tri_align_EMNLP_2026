@@ -2,16 +2,14 @@
 """
 Compute retrieval scores using DOT PRODUCT (Cosine Similarity).
 Generates results for all 6 directional pairs.
-Uses FAISS for negative sampling.
 """
 
 import os
 import json
 import torch
 import numpy as np
-import faiss
 from tqdm import tqdm
-from retrieval_utils import (  # FIXED: retrieval (not retrival)
+from retrieval_utils import (
     load_layer_representations,
     compute_layerwise_retrieval_dot,  # FIXED: Use specific function name
     print_retrieval_summary
@@ -27,8 +25,8 @@ OUTPUT_DIR = "/output-dir/results_length_aware_dot-5"
 
 # Cache directory for precomputed candidate pools
 CANDIDATES_CACHE_DIR = os.path.join(
-    "/root/retrival-scores",
-    "negatives_cache-5-faiss"
+    "/root/retrieval-scores",
+    "negatives_cache-5"
 )
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(CANDIDATES_CACHE_DIR, exist_ok=True)
@@ -52,8 +50,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {DEVICE}")
 print(f"Percentile window: ±{PERCENTILE_WINDOW} percentiles")
 print(f"Seed: {SEED}")
-print("Similarity metric: DOT PRODUCT (Cosine Similarity)")
-print("Negative sampling: FAISS-based\n")
+print("Similarity metric: DOT PRODUCT (Cosine Similarity)\n")
 
 # ============================================================
 # LOAD DATASET
@@ -71,7 +68,7 @@ N = len(data)
 print(f"Loaded {N} samples\n")
 
 # ============================================================
-# LENGTH-AWARE CANDIDATES & NEGATIVE SAMPLING WITH FAISS
+# LENGTH-AWARE CANDIDATES & NEGATIVE SAMPLING
 # ============================================================
 
 def get_token_lengths(sentences):
@@ -118,82 +115,17 @@ def precompute_length_aware_candidates(
     return candidates_per_query
 
 
-def sample_negatives_from_candidates_faiss(
-    candidates_list, 
-    representations,
-    num_negatives=NUM_NEGATIVES, 
-    seed=SEED
-):
-    """
-    Sample negatives using FAISS for efficient similarity search.
-    Uses the last layer representations for negative sampling.
-    
-    Args:
-        candidates_list: List of candidate pools per query
-        representations: Tensor of shape (num_layers, num_samples, hidden_dim)
-        num_negatives: Number of negatives to sample
-        seed: Random seed
-    
-    Returns:
-        List of negative samples per query
-    """
+def sample_negatives_from_candidates(candidates_list, num_negatives=NUM_NEGATIVES, seed=SEED):
     np.random.seed(seed)
-    
-    # Use last layer representations for FAISS search
-    last_layer_reps = representations[-1]  # shape: (num_samples, hidden_dim)
-    
-    # Normalize representations for cosine similarity
-    last_layer_reps_np = last_layer_reps.cpu().numpy() if torch.is_tensor(last_layer_reps) else last_layer_reps
-    last_layer_reps_np = last_layer_reps_np.astype('float32')
-    
-    # Normalize to unit length for cosine similarity
-    faiss.normalize_L2(last_layer_reps_np)
-    
-    # Build FAISS index
-    dimension = last_layer_reps_np.shape[1]
-    index = faiss.IndexFlatIP(dimension)  # Inner product for cosine similarity
-    index.add(last_layer_reps_np)
-    
     negatives = []
     
-    for i, cands in enumerate(tqdm(candidates_list, desc="FAISS negative sampling")):
-        if len(cands) == 0:
-            negatives.append([])
-            continue
-        
-        # Get similarity scores for candidates
-        query_vec = last_layer_reps_np[i:i+1]  # shape: (1, dim)
-        
-        # Search within the candidate pool
-        # We need to get scores for all candidates and sample based on similarity
-        candidate_vecs = last_layer_reps_np[cands]
-        
-        # Compute similarities
-        similarities = np.dot(candidate_vecs, query_vec.T).flatten()
-        
-        # Convert similarities to probabilities (inverse relationship)
-        # Lower similarity = higher probability of being selected as negative
-        # Use softmax with negative similarities
-        probabilities = np.exp(-similarities * 5)  # Temperature = 5 for sharper distribution
-        probabilities = probabilities / probabilities.sum()
-        
-        # Sample negatives based on probabilities
+    for cands in candidates_list:
         if len(cands) >= num_negatives:
-            chosen_indices = np.random.choice(
-                len(cands), 
-                num_negatives, 
-                replace=False, 
-                p=probabilities
-            )
+            chosen = np.random.choice(cands, num_negatives, replace=False).tolist()
+        elif len(cands) > 0:
+            chosen = np.random.choice(cands, num_negatives, replace=True).tolist()
         else:
-            chosen_indices = np.random.choice(
-                len(cands), 
-                num_negatives, 
-                replace=True, 
-                p=probabilities
-            )
-        
-        chosen = [cands[idx] for idx in chosen_indices]
+            chosen = []  # fallback - very rare
         negatives.append(chosen)
     
     return negatives
@@ -205,7 +137,12 @@ candidates_en = precompute_length_aware_candidates(english, cache_key="en")
 candidates_hi = precompute_length_aware_candidates(hindi, cache_key="hi")
 candidates_cm = precompute_length_aware_candidates(codemixed, cache_key="cm")
 
-print("\n✓ Candidates ready for all languages\n")
+# Sample negatives
+print("\nSampling negatives with seed =", SEED)
+negatives_en = sample_negatives_from_candidates(candidates_en)
+negatives_hi = sample_negatives_from_candidates(candidates_hi)
+negatives_cm = sample_negatives_from_candidates(candidates_cm)
+print("✓ Negatives ready for all languages\n")
 
 # ============================================================
 # MAIN RETRIEVAL LOOP
@@ -220,7 +157,7 @@ for model_name, model_config in MODELS.items():
 
     model_output_dir = os.path.join(OUTPUT_DIR, model_name)
     os.makedirs(model_output_dir, exist_ok=True)
-    output_file = os.path.join(model_output_dir, "dot-retrival-triplets.json")
+    output_file = os.path.join(model_output_dir, "dot-retrieval-triplets.json")
 
     if os.path.exists(output_file):
         print(f"Output already exists for {model_name}: {output_file}")
@@ -255,13 +192,6 @@ for model_name, model_config in MODELS.items():
 
     assert en_reps.shape == hi_reps.shape == cm_reps.shape, "Shape mismatch!"
 
-    # Sample negatives using FAISS for this model
-    print("Sampling negatives with FAISS (seed =", SEED, ")...")
-    negatives_en = sample_negatives_from_candidates_faiss(candidates_en, en_reps)
-    negatives_hi = sample_negatives_from_candidates_faiss(candidates_hi, hi_reps)
-    negatives_cm = sample_negatives_from_candidates_faiss(candidates_cm, cm_reps)
-    print("✓ Negatives ready for all languages\n")
-
     results = {
         "model_name": model_name,
         "num_layers": num_layers,
@@ -271,7 +201,6 @@ for model_name, model_config in MODELS.items():
         "percentile_window": PERCENTILE_WINDOW,
         "seed": SEED,
         "metric": "dot",
-        "negative_sampling": "faiss",
         "retrieval_pairs": {}
     }
 
@@ -321,7 +250,7 @@ for model_name, model_config in MODELS.items():
 # ============================================================
 
 print("\n" + "="*70)
-print("SUMMARY TABLE - ALL MODELS (DOT PRODUCT / COSINE - FAISS)")
+print("SUMMARY TABLE - ALL MODELS (DOT PRODUCT / COSINE)")
 print("="*70)
 
 for model_name, results in all_results.items():

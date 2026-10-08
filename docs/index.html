@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta property="og:title" content="Neither Here Nor There">
+<meta property="og:description" content="Cross-lingual representation dynamics of code-mixed text in multilingual encoders (EMNLP 2026).">
+<meta property="og:image" content="assets/tri_align_poster.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Neither Here Nor There</title>
+<meta name="description" content="How multilingual encoders represent Hindi–English code-mixed text, and a trilingual alignment stage that grounds it in both languages. EMNLP 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&family=Tiro+Devanagari+Hindi&display=swap">
+<style>
+/* Layout: one 960px reading column; the animated embedding figure is the only full-bleed, boxed object. */
+:root {
+  --bg: #F4F5F9;
+  --surface: #FFFFFF;
+  --ink: #131726;
+  --muted: #586074;
+  --rule: #DCDFE9;
+  --en: #2B58D6;
+  --hi: #C46A00;
+  --cm: #B0237A;
+  --good: #1D7F4E;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-deva: "Tiro Devanagari Hindi", "Noto Serif Devanagari", "Mangal", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C0F17; --surface: #141925; --ink: #E7E9F2; --muted: #9AA1B6; --rule: #262D3D;
+    --en: #7E9DFF; --hi: #FFAD45; --cm: #F06BB9; --good: #5FD39A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C0F17; --surface: #141925; --ink: #E7E9F2; --muted: #9AA1B6; --rule: #262D3D;
+  --en: #7E9DFF; --hi: #FFAD45; --cm: #F06BB9; --good: #5FD39A; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 1000px; margin: 0 auto; padding-inline: 20px; padding-block: 56px 72px; display: grid; gap: 64px; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 1.6rem; font-weight: 700; }
+p { margin: 0; }
+.prose { max-width: 66ch; display: grid; gap: 14px; }
+.en { color: var(--en); } .hi { color: var(--hi); } .cm { color: var(--cm); }
+.deva { font-family: var(--f-deva); }
+.eyebrow { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+/* Hero */
+.hero { display: grid; gap: 22px; }
+.hero h1 { font-size: clamp(2.5rem, 7vw, 4.6rem); font-weight: 800; line-height: 0.98; }
+.hero h1 span { display: inline-block; }
+.subtitle { font-family: var(--f-display); font-weight: 500; font-size: clamp(1.1rem, 2.4vw, 1.45rem); line-height: 1.3; color: var(--ink); max-width: 40ch; }
+.authors { display: grid; gap: 4px; font-size: 1rem; }
+.authors .names { display: flex; flex-wrap: wrap; column-gap: 18px; row-gap: 2px; font-weight: 600; }
+.authors sup, .affil sup { font-family: var(--f-mono); font-size: 0.68em; color: var(--muted); }
+.affil { color: var(--muted); font-size: 0.92rem; display: flex; flex-wrap: wrap; column-gap: 18px; }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { font-family: var(--f-mono); font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px; border: 1px solid var(--ink); text-decoration: none; color: var(--ink); background: transparent; cursor: pointer; }
+.btn.primary { background: var(--ink); color: var(--bg); }
+.btn:hover { transform: translateY(-1px); }
+.btn[aria-disabled="true"] { opacity: 0.45; cursor: default; transform: none; border-style: dashed; }
+.btn:focus-visible, button:focus-visible { outline: 2px solid var(--en); outline-offset: 3px; }
+.btn svg { width: 15px; height: 15px; }
+
+/* Figure */
+.figure { background: var(--surface); border: 1px solid var(--rule); border-radius: 18px; padding: 22px; display: grid; gap: 18px; }
+.triple { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.triple div { min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--rule); display: grid; gap: 2px; }
+.triple .tag { font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+.triple .s { font-size: 0.98rem; line-height: 1.35; }
+.triple .deva { font-size: 1.05rem; }
+.stage { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 22px; align-items: stretch; }
+.canvas-box { position: relative; min-width: 0; }
+canvas { display: block; width: 100%; height: auto; border-radius: 12px; }
+.panel { min-width: 0; display: grid; gap: 16px; align-content: start; }
+.panel .model { font-family: var(--f-display); font-size: 1.55rem; font-weight: 700; line-height: 1.1; }
+.bars { display: grid; gap: 12px; }
+.bar { display: grid; gap: 5px; }
+.bar .row { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 0.82rem; }
+.bar .row b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.track { height: 9px; border-radius: 99px; background: var(--rule); overflow: hidden; }
+.fill { height: 100%; border-radius: 99px; width: 0%; }
+.fill.eh { background: linear-gradient(90deg, var(--en), var(--hi)); }
+.fill.ec { background: linear-gradient(90deg, var(--en), var(--cm)); }
+.fill.hc { background: linear-gradient(90deg, var(--hi), var(--cm)); }
+.clas { display: flex; align-items: baseline; gap: 10px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.clas .num { font-family: var(--f-display); font-weight: 800; font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.clas .lbl { font-family: var(--f-mono); font-size: 0.74rem; color: var(--muted); line-height: 1.35; }
+.caption h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+.caption p { font-size: 0.95rem; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; flex: 1 1 420px; }
+.step { position: relative; overflow: hidden; text-align: left; font-family: var(--f-mono); font-size: 0.78rem; color: var(--muted); background: transparent; border: 1px solid var(--rule); border-radius: 10px; padding: 8px 10px 11px; cursor: pointer; min-width: 0; }
+.step b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+.step[aria-current="step"] { color: var(--ink); border-color: var(--ink); }
+.step .prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 0%; background: var(--ink); }
+.toggles { display: flex; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; }
+.seg button, .play { font-family: var(--f-mono); font-size: 0.78rem; border: 0; background: transparent; color: var(--muted); padding: 6px 11px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.play { border: 1px solid var(--rule); color: var(--ink); min-width: 74px; }
+.note { font-size: 0.8rem; color: var(--muted); font-family: var(--f-mono); line-height: 1.5; }
+
+/* Sections */
+section { display: grid; gap: 18px; }
+.findings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; counter-reset: f; }
+.findings li { list-style: none; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.findings li::before { counter-increment: f; content: counter(f); font-family: var(--f-display); font-weight: 800; font-size: 1.9rem; line-height: 1; color: var(--muted); }
+.findings h3 { font-size: 1.08rem; font-weight: 700; }
+.findings p { font-size: 0.95rem; color: var(--muted); }
+ol.findings { padding: 0; margin: 0; }
+.eq { font-family: var(--f-mono); font-size: 0.95rem; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; overflow-x: auto; line-height: 1.9; white-space: nowrap; }
+.eq i { font-family: var(--f-body); }
+.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 10px 14px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+tbody tr:last-child td { border-bottom: 0; }
+td.fam { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: var(--bg); padding-block: 6px; }
+td .up { color: var(--good); font-weight: 600; }
+td .after { font-weight: 600; }
+.two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+pre.bib { margin: 0; font-family: var(--f-mono); font-size: 0.82rem; line-height: 1.55; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; overflow-x: auto; }
+.bibhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--rule); padding-top: 18px; }
+
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .wrap { padding-inline: 16px; padding-block: 36px 56px; gap: 48px; }
+  .figure { padding: 14px; }
+  .stage, .two { grid-template-columns: minmax(0, 1fr); }
+  .findings { grid-template-columns: minmax(0, 1fr); }
+  .triple { grid-template-columns: minmax(0, 1fr); }
+  .step span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .btn:hover { transform: none; } }
+
+/* Recording mode: used only to export the GIF/MP4 */
+.rec .wrap > :not(#figure) { display: none; }
+.rec .wrap { padding-block: 0; max-width: 1040px; }
+.rec .toggles { display: none; }
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="eyebrow">EMNLP 2026</div>
+    <h1><span class="cm">Neither</span> <span class="en">Here</span> Nor <span class="hi">There</span></h1>
+    <p class="subtitle">Cross-Lingual Representation Dynamics of Code-Mixed Text in Multilingual Encoders</p>
+    <div class="authors">
+      <div class="names"><span>Debajyoti Mazumder<sup>1</sup></span><span>Divyansh Pathak<sup>1</sup></span><span>Prashant Kodali<sup>2</sup></span><span>Jasabanta Patro<sup>1</sup></span></div>
+      <div class="affil"><span><sup>1</sup>Indian Institute of Science Education and Research, Bhopal</span><span><sup>2</sup>Microsoft Research India</span></div>
+    </div>
+    <nav class="links" aria-label="Paper links">
+      <a class="btn" href="https://arxiv.org/abs/2603.19771" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>arXiv 2603.19771</a>
+      <a class="btn primary" href="https://github.com/debajyotimaz/tri_align_EMNLP_2026" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>Code</a>
+      <a class="btn" href="https://github.com/debajyotimaz/tri_align_EMNLP_2026/tree/main/Data" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Trilingual corpus</a>
+      <a class="btn" href="#cite">BibTeX</a>
+    </nav>
+  </header>
+
+  <section id="figure" class="figure" aria-label="Animated summary of the main result">
+    <div class="triple" aria-label="Example parallel sentence triple from the corpus">
+      <div><span class="tag en">EN · English</span><span class="s">Did you want to know more?</span></div>
+      <div><span class="tag hi">HI · Hindi</span><span class="s deva">क्या आप और जानना चाहते हैं?</span></div>
+      <div><span class="tag cm">CM · Hinglish</span><span class="s">Kya tum aur janna chahte ho?</span></div>
+    </div>
+    <div class="stage">
+      <div class="canvas-box"><canvas id="cv" role="img" aria-label="Embedding-space schematic of English, Hindi and code-mixed sentence clusters"></canvas></div>
+      <div class="panel" aria-live="polite">
+        <div>
+          <div class="eyebrow" id="stageTag">Stage 1 of 3</div>
+          <div class="model" id="modelName">mBERT</div>
+        </div>
+        <div class="bars">
+          <div class="bar"><div class="row"><span><span class="en">EN</span> ↔ <span class="hi">HI</span></span><b id="vEH">0.0</b></div><div class="track"><div class="fill eh" id="bEH"></div></div></div>
+          <div class="bar"><div class="row"><span><span class="en">EN</span> ↔ <span class="cm">CM</span></span><b id="vEC">0.0</b></div><div class="track"><div class="fill ec" id="bEC"></div></div></div>
+          <div class="bar"><div class="row"><span><span class="hi">HI</span> ↔ <span class="cm">CM</span></span><b id="vHC">0.0</b></div><div class="track"><div class="fill hc" id="bHC"></div></div></div>
+        </div>
+        <div class="clas"><span class="num" id="vCLAS">0.0</span><span class="lbl">CLAS<br>balanced alignment score</span></div>
+        <div class="caption"><h3 id="capH"></h3><p id="capP"></p></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="steps" role="group" aria-label="Stages">
+        <button class="step" data-s="0"><b>1</b><span>Off-the-shelf</span><i class="prog"></i></button>
+        <button class="step" data-s="1"><b>2</b><span>Code-mixed adapted</span><i class="prog"></i></button>
+        <button class="step" data-s="2"><b>3</b><span>+ Trilingual alignment</span><i class="prog"></i></button>
+      </div>
+      <div class="toggles">
+        <div class="seg" role="group" aria-label="Model family">
+          <button id="fam-mbert" aria-pressed="true">mBERT</button>
+          <button id="fam-xlmr" aria-pressed="false">XLM-R</button>
+        </div>
+        <button class="play" id="play">Pause</button>
+      </div>
+    </div>
+    <p class="note">Bars: mean bidirectional retrieval accuracy (%), last layer, 10 negatives, mean of 3 seeds. Centroid distance in the plot is drawn from 1 − accuracy. The dots are a schematic of parallel sentences, not real embeddings.</p>
+  </section>
+
+  <section>
+    <h2>In brief</h2>
+    <div class="prose">
+      <p>Multilingual encoders such as mBERT and XLM-R are widely used for code-mixed text, but it is unclear how their representations of code-mixed sentences relate to the two languages being mixed. We build a parallel corpus of 21,139 English, Hindi (Devanagari) and Romanized Hinglish sentence triples and probe six encoders with retrieval, CKA, token-level saliency and entropy-based uncertainty.</p>
+    </div>
+    <ol class="findings">
+      <li><h3>Code-mixed text sits on the periphery</h3><p>Off-the-shelf encoders align English and Hindi best. Code-mixed sentences are weakly anchored to either language: EN↔HI &gt; EN↔CM &gt; HI↔CM.</p></li>
+      <li><h3>Adaptation trades one gap for another</h3><p>Continued pretraining on Hinglish pulls code-mixed text toward English, but English–Hindi alignment drops. Models read code-mixed text through an English-dominant subspace, while native-script Hindi reduces uncertainty.</p></li>
+      <li><h3>Trilingual alignment restores balance</h3><p>A post-training loss that aligns all three pairs at once lifts CLAS for every model and improves cross-lingual consistency on sentiment and hate speech detection.</p></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Trilingual post-training alignment</h2>
+    <div class="prose">
+      <p>We keep each encoder's original objective (MLM + NSP for mBERT, MLM for XLM-R) and add a cosine alignment term over the normalized <code>[CLS]</code> embeddings of each parallel triple (<i class="en">e</i>, <i class="hi">h</i>, <i class="cm">c</i>):</p>
+    </div>
+    <div class="eq">
+      <i>L</i> = <i>L</i><sub>base</sub> + λ · <i>L</i><sub>align</sub>,&nbsp;&nbsp; λ = 0.05<br>
+      <i>L</i><sub>align</sub> = ⅓ Σ<sub>(u,v) ∈ {(<span class="en">e</span>,<span class="hi">h</span>), (<span class="en">e</span>,<span class="cm">c</span>), (<span class="hi">h</span>,<span class="cm">c</span>)}</sub> &nbsp;1/B Σ<sub>i</sub> (1 − <b>u</b><sub>i</sub><sup>⊤</sup><b>v</b><sub>i</sub>)
+    </div>
+    <div class="prose">
+      <p>To score how evenly a model aligns the three pairs, we introduce the <b>Cross-Lingual Alignment Score</b>: CLAS = MeanAcc − DirBias − SetupStd. It rewards high retrieval accuracy and penalizes direction asymmetry and imbalance across EN↔HI, EN↔CM and HI↔CM.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Results</h2>
+    <div class="two">
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Model (last layer)</th><th>CLAS</th><th>+ Trilingual</th><th>Δ</th></tr></thead>
+          <tbody id="clasRows"></tbody>
+        </table>
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Consistency</th><th>Sentiment</th><th>Hate</th></tr></thead>
+          <tbody>
+            <tr><td>mBERT</td><td>0.4012</td><td>0.5220</td></tr>
+            <tr><td>mBERT-Tri</td><td class="after">0.4898</td><td class="after">0.5953</td></tr>
+            <tr><td>XLM-R</td><td>0.5720</td><td>0.6307</td></tr>
+            <tr><td>XLM-R-Tri</td><td class="after">0.5986</td><td class="after">0.6701</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note">Left: CLAS from bidirectional retrieval with 10 negatives (mean of 3 seeds). Right: mean cross-lingual consistency across CM, EN and HI training settings on downstream tasks.</p>
+  </section>
+
+  <section id="cite">
+    <div class="bibhead"><h2>Citation</h2><button class="btn" id="copyBib">Copy BibTeX</button></div>
+<pre class="bib" id="bib">@article{mazumder2026neither,
+  title   = {Neither Here Nor There: Cross-Lingual Representation Dynamics
+             of Code-Mixed Text in Multilingual Encoders},
+  author  = {Mazumder, Debajyoti and Pathak, Divyansh and
+             Kodali, Prashant and Patro, Jasabanta},
+  journal = {arXiv preprint arXiv:2603.19771},
+  year    = {2026}
+}</pre>
+  </section>
+
+  <footer>Code, corpus and training scripts: <a href="https://github.com/debajyotimaz/tri_align_EMNLP_2026" target="_blank" rel="noopener">github.com/debajyotimaz/tri_align_EMNLP_2026</a></footer>
+</main>
+
+<script>
+(() => {
+  // Last-layer bidirectional retrieval accuracy (fwd, bwd) and CLAS, Table 3 of the paper.
+  const DATA = {
+    mbert: [
+      { model: "mBERT", ec: [54.75, 42.90], eh: [74.87, 33.80], hc: [26.30, 39.05], clas: 14.20 },
+      { model: "Hing-mBERT", ec: [52.78, 71.86], eh: [32.30, 33.43], hc: [24.70, 28.99], clas: 17.01 },
+      { model: "Hing-mBERT Trilingual", ec: [57.73, 62.96], eh: [78.05, 76.40], hc: [53.00, 59.70], clas: 51.07 },
+    ],
+    xlmr: [
+      { model: "XLM-R", ec: [50.56, 50.67], eh: [58.81, 54.33], hc: [38.37, 40.46], clas: 39.53 },
+      { model: "Hing-RoBERTa", ec: [64.94, 72.14], eh: [15.02, 27.54], hc: [26.19, 14.48], clas: 3.74 },
+      { model: "Hing-RoBERTa Trilingual", ec: [81.43, 89.85], eh: [69.11, 76.70], hc: [63.84, 62.58], clas: 58.98 },
+    ],
+  };
+  const CLAS_TABLE = [
+    ["mBERT family"],
+    ["mBERT", 14.20, 50.97], ["Hing-mBERT", 17.01, 51.07], ["Hing-mBERT-Mixed", 34.95, 42.51],
+    ["XLM-R family"],
+    ["XLM-R", 39.53, 47.50], ["Hing-RoBERTa", 3.74, 58.98], ["Hing-RoBERTa-Mixed", 73.09, 73.50],
+  ];
+  const CAPTIONS = [
+    ["Neither here nor there", "Off-the-shelf encoders align English and Hindi, but code-mixed sentences sit on the periphery, weakly anchored to both."],
+    ["Adaptation trades one gap for another", "Continued pretraining on Hinglish pulls code-mixed text toward English, while English–Hindi alignment falls apart."],
+    ["Grounded in both languages", "Aligning EN–HI, EN–CM and HI–CM together brings code-mixed text close to both parents and lifts CLAS."],
+  ];
+  const TAGS = ["Stage 1 of 3 · off-the-shelf", "Stage 2 of 3 · code-mixed adapted", "Stage 3 of 3 · + trilingual alignment"];
+
+  const mean = (p) => (p[0] + p[1]) / 2;
+  // Centroid triangle: EN and HI on a horizontal line, CM below; side length = 0.18 + (1 - acc).
+  function geometry(st) {
+    const acc = { eh: mean(st.eh), ec: mean(st.ec), hc: mean(st.hc) };
+    const d = (a) => 0.18 + (1 - a / 100);
+    const dEH = d(acc.eh), dEC = d(acc.ec), dHC = d(acc.hc);
+    const x = (dEC * dEC - dHC * dHC) / (2 * dEH);
+    const y = Math.sqrt(Math.max(0, dEC * dEC - (x + dEH / 2) ** 2));
+    const pts = [[-dEH / 2, 0], [dEH / 2, 0], [x, y]];
+    const cx = (pts[0][0] + pts[1][0] + pts[2][0]) / 3, cy = (pts[0][1] + pts[1][1] + pts[2][1]) / 3;
+    return { c: pts.flatMap(([px, py]) => [px - cx, py - cy]), acc: [acc.eh, acc.ec, acc.hc], clas: st.clas };
+  }
+  const VIEWS = {};
+  for (const f in DATA) VIEWS[f] = DATA[f].map(geometry);
+  let EXT_X = 0, EXT_Y = 0;
+  for (const f in VIEWS) for (const v of VIEWS[f]) for (let i = 0; i < 3; i++) {
+    EXT_X = Math.max(EXT_X, Math.abs(v.c[2 * i])); EXT_Y = Math.max(EXT_Y, Math.abs(v.c[2 * i + 1]));
+  }
+
+  // Deterministic sentence dots: shared semantic offset per sentence + language-specific noise.
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const rand = rng(7);
+  const gauss = () => { const u = Math.max(1e-9, rand()), v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const N = 46;
+  const DOTS = Array.from({ length: N }, (_, i) => {
+    const sx = gauss() * 0.55, sy = gauss() * 0.55;
+    return {
+      off: [0, 1, 2].map(() => [sx + gauss() * 0.42, sy + gauss() * 0.42]),
+      ph: [0, 1, 2].map(() => rand() * Math.PI * 2),
+      hero: i === 0,
+    };
+  });
+  DOTS[0].off = [[0.15, -0.1], [0.05, 0.12], [-0.05, 0.02]];
+
+  const $ = (id) => document.getElementById(id);
+  const cv = $("cv"), ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const P = 6000, T = 1600; // segment length and transition length (ms)
+
+  let family = "mbert", playing = !reduce, clock = T, last = performance.now();
+  let segIdx = 0, from = VIEWS.mbert[0], shown = VIEWS.mbert[0];
+
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const mix = (a, b, t) => ({ c: a.c.map((v, i) => lerp(v, b.c[i], t)), acc: a.acc.map((v, i) => lerp(v, b.acc[i], t)), clas: lerp(a.clas, b.clas, t) });
+
+  let W = 0, H = 0, dpr = 1;
+  function resize() {
+    const w = cv.parentElement.clientWidth;
+    const h = Math.max(300, Math.round(w * 0.62));
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (w === W && h === H) return;
+    W = w; H = h; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.height = h + "px";
+  }
+
+  function tokens() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = (n) => cs.getPropertyValue(n).trim();
+    return { en: g("--en"), hi: g("--hi"), cm: g("--cm"), ink: g("--ink"), muted: g("--muted"), rule: g("--rule"), surface: g("--surface"), bg: g("--bg"),
+      display: g("--f-display"), mono: g("--f-mono"), deva: g("--f-deva") };
+  }
+  function alpha(hex, a) {
+    const h = hex.replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
+    return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+  }
+
+  function draw(view, t) {
+    resize();
+    const k = tokens(), cols = [k.en, k.hi, k.cm];
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = k.bg; ctx.fillRect(0, 0, W, H);
+    const s = Math.min(W / 700, H / 460);
+    const R = 30 * s, marginX = R + 46 * s, marginY = R + 72 * s, cy0 = H / 2 + 4 * s;
+    const scale = Math.min((W / 2 - marginX) / EXT_X, (H / 2 - marginY) / EXT_Y);
+    const C = [0, 1, 2].map((i) => [W / 2 + view.c[2 * i] * scale, cy0 + view.c[2 * i + 1] * scale]);
+    const wob = reduce ? 0 : 1.6 * s;
+    const pos = (d, l) => [C[l][0] + d.off[l][0] * R + Math.sin(t / 900 + d.ph[l]) * wob, C[l][1] + d.off[l][1] * R + Math.cos(t / 1100 + d.ph[l]) * wob];
+
+    // faint grid
+    ctx.strokeStyle = alpha(k.muted, 0.08); ctx.lineWidth = 1;
+    const gs = 40 * s;
+    for (let x = (W / 2) % gs; x < W; x += gs) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = (H / 2) % gs; y < H; y += gs) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // threads between parallel sentences
+    ctx.lineWidth = 1;
+    DOTS.forEach((d, i) => {
+      if (i % 4 || d.hero) return;
+      const p = [0, 1, 2].map((l) => pos(d, l));
+      ctx.strokeStyle = alpha(k.muted, 0.09);
+      ctx.beginPath(); ctx.moveTo(...p[0]); ctx.lineTo(...p[2]); ctx.lineTo(...p[1]); ctx.lineTo(...p[0]); ctx.stroke();
+    });
+
+    // centroid edges with accuracy labels
+    const pairs = [[0, 1, 0], [0, 2, 1], [1, 2, 2]];
+    for (const [a, b, ai] of pairs) {
+      const acc = view.acc[ai];
+      ctx.strokeStyle = alpha(k.ink, 0.15 + 0.55 * Math.max(0, (acc - 15) / 75));
+      ctx.lineWidth = (0.8 + 3.6 * Math.max(0, (acc - 15) / 75)) * s;
+      ctx.setLineDash([6 * s, 5 * s]);
+      ctx.beginPath(); ctx.moveTo(...C[a]); ctx.lineTo(...C[b]); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // dots
+    for (let l = 0; l < 3; l++) {
+      for (const d of DOTS) {
+        if (d.hero) continue;
+        const [x, y] = pos(d, l);
+        ctx.fillStyle = alpha(cols[l], 0.72);
+        ctx.beginPath(); ctx.arc(x, y, 3.3 * s, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    // highlighted example triple
+    const hp = [0, 1, 2].map((l) => pos(DOTS[0], l));
+    ctx.strokeStyle = alpha(k.ink, 0.75); ctx.lineWidth = 1.4 * s; ctx.setLineDash([2 * s, 3 * s]);
+    ctx.beginPath(); ctx.moveTo(...hp[0]); ctx.lineTo(...hp[2]); ctx.lineTo(...hp[1]); ctx.lineTo(...hp[0]); ctx.stroke(); ctx.setLineDash([]);
+    hp.forEach(([x, y], l) => {
+      ctx.fillStyle = cols[l]; ctx.strokeStyle = k.surface; ctx.lineWidth = 2.2 * s;
+      ctx.beginPath(); ctx.arc(x, y, 6.4 * s, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+
+    // edge value pills
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (const [a, b, ai] of pairs) {
+      const mx = (C[a][0] + C[b][0]) / 2, my = (C[a][1] + C[b][1]) / 2;
+      const txt = view.acc[ai].toFixed(1) + "%";
+      ctx.font = `600 ${Math.round(12.5 * s)}px ${k.mono}`;
+      const w = ctx.measureText(txt).width + 14 * s, h = 22 * s;
+      ctx.fillStyle = k.surface; ctx.strokeStyle = alpha(k.ink, 0.25); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(mx - w / 2, my - h / 2, w, h, h / 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = k.ink; ctx.fillText(txt, mx, my + 0.5);
+    }
+
+    // language labels
+    const labels = [["EN", "English"], ["HI", "हिन्दी"], ["CM", "Hinglish"]];
+    labels.forEach(([code, name], l) => {
+      const below = l === 2;
+      const y = C[l][1] + (below ? 2.0 * R + 16 * s : -2.0 * R - 18 * s);
+      ctx.fillStyle = cols[l];
+      ctx.font = `800 ${Math.round(20 * s)}px ${k.display}`;
+      ctx.fillText(code, C[l][0], y - 7 * s);
+      ctx.font = `${Math.round(12.5 * s)}px ${l === 1 ? k.deva : k.mono}`;
+      ctx.fillStyle = k.muted;
+      ctx.fillText(name, C[l][0], y + 12 * s);
+    });
+  }
+
+  const el = { tag: $("stageTag"), model: $("modelName"), capH: $("capH"), capP: $("capP"),
+    v: [$("vEH"), $("vEC"), $("vHC")], b: [$("bEH"), $("bEC"), $("bHC")], clas: $("vCLAS"),
+    steps: [...document.querySelectorAll(".step")], play: $("play") };
+
+  function panel(view, s, segT) {
+    view.acc.forEach((a, i) => { el.v[i].textContent = a.toFixed(1); el.b[i].style.width = a.toFixed(2) + "%"; });
+    el.clas.textContent = view.clas.toFixed(1);
+    el.tag.textContent = TAGS[s];
+    el.model.textContent = DATA[family][s].model;
+    el.capH.textContent = CAPTIONS[s][0]; el.capP.textContent = CAPTIONS[s][1];
+    el.steps.forEach((b, i) => {
+      b.toggleAttribute("aria-current", false);
+      if (i === s) b.setAttribute("aria-current", "step");
+      b.querySelector(".prog").style.width = (i === s && playing ? Math.min(100, segT / P * 100) : 0) + "%";
+    });
+  }
+
+  // Render the frame at timeline position t (ms). Each segment morphs from whatever was on screen into stage s, then holds.
+  let lastT = T;
+  function renderAt(t) {
+    lastT = t;
+    const s = Math.floor(t / P) % 3, segT = t % P;
+    if (s !== segIdx) { from = shown; segIdx = s; }
+    const p = reduce ? 1 : ease(Math.min(1, segT / T));
+    shown = mix(from, VIEWS[family][s], p);
+    draw(shown, t);
+    panel(shown, s, segT);
+  }
+
+  function frame(now) {
+    if (playing) clock += Math.min(100, now - last);
+    last = now;
+    renderAt(clock);
+    requestAnimationFrame(frame);
+  }
+
+  el.steps.forEach((b) => b.addEventListener("click", () => { segIdx = -1; clock = +b.dataset.s * P; }));
+  el.play.addEventListener("click", () => { playing = !playing; el.play.textContent = playing ? "Pause" : "Play"; });
+  if (!playing) el.play.textContent = "Play";
+  for (const f of ["mbert", "xlmr"]) {
+    $("fam-" + f).addEventListener("click", () => {
+      if (family === f) return;
+      family = f;
+      $("fam-mbert").setAttribute("aria-pressed", f === "mbert"); $("fam-xlmr").setAttribute("aria-pressed", f === "xlmr");
+      segIdx = -1; clock = Math.floor(clock / P) * P;
+    });
+  }
+
+  // CLAS table
+  $("clasRows").innerHTML = CLAS_TABLE.map((r) => r.length === 1
+    ? `<tr><td class="fam" colspan="4">${r[0]}</td></tr>`
+    : `<tr><td>${r[0]}</td><td>${r[1].toFixed(2)}</td><td class="after">${r[2].toFixed(2)}</td><td><span class="up">+${(r[2] - r[1]).toFixed(2)}</span></td></tr>`).join("");
+
+  $("copyBib").addEventListener("click", async () => {
+    const txt = $("bib").textContent, btn = $("copyBib");
+    try { await navigator.clipboard.writeText(txt); btn.textContent = "Copied"; }
+    catch { const r = document.createRange(); r.selectNodeContents($("bib")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = "Selected, press Ctrl+C"; }
+    setTimeout(() => (btn.textContent = "Copy BibTeX"), 2200);
+  });
+
+  // Export hook: deterministic frames for the GIF/MP4 (used only by the recording script).
+  window.__record = {
+    setup(fam) { document.documentElement.classList.add("rec"); family = fam; playing = true; shown = VIEWS[fam][2]; segIdx = 2; W = 0; },
+    frame(t) { renderAt(t); },
+    P,
+  };
+
+  addEventListener("resize", () => renderAt(lastT));
+  document.fonts?.ready.then(() => renderAt(lastT));
+  if (location.hash === "#record") renderAt(clock);
+  else requestAnimationFrame((n) => { last = n; frame(n); });
+})();
+</script>
+
+</body>
+</html>
