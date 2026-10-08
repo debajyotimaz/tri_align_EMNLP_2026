@@ -7,6 +7,8 @@
 
 **Debajyoti Mazumder, Divyansh Pathak, Prashant Kodali, Jasabanta Patro** · EMNLP Findings 2026
 
+**[Project page](https://debajyotimaz.github.io/tri_align_EMNLP_2026/)** · [Paper](https://arxiv.org/abs/2603.19771) · [Dataset](https://huggingface.co/datasets/debajyotimaz/trilingual-hinglish-corpus)
+
 <p align="center"><img src="docs/assets/tri_align.gif" width="820" alt="Trilingual alignment animation"></p>
 
 ## TL;DR
