@@ -47,7 +47,6 @@ a { color: inherit; }
 h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
 h2 { font-size: 1.6rem; font-weight: 700; }
 p { margin: 0; }
-.prose { max-width: 66ch; display: grid; gap: 14px; }
 .en { color: var(--en); } .hi { color: var(--hi); } .cm { color: var(--cm); }
 .deva { font-family: var(--f-deva); }
 .eyebrow { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
@@ -110,34 +109,14 @@ canvas { display: block; width: 100%; height: auto; border-radius: 12px; }
 
 /* Sections */
 section { display: grid; gap: 18px; }
-.findings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; counter-reset: f; }
-.findings li { list-style: none; display: grid; gap: 6px; align-content: start; min-width: 0; }
-.findings li::before { counter-increment: f; content: counter(f); font-family: var(--f-display); font-weight: 800; font-size: 1.9rem; line-height: 1; color: var(--muted); }
-.findings h3 { font-size: 1.08rem; font-weight: 700; }
-.findings p { font-size: 0.95rem; color: var(--muted); }
-ol.findings { padding: 0; margin: 0; }
-.eq { font-family: var(--f-mono); font-size: 0.95rem; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; overflow-x: auto; line-height: 1.9; white-space: nowrap; }
-.eq i { font-family: var(--f-body); }
-.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; }
-table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
-th, td { padding: 10px 14px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
-th:first-child, td:first-child { text-align: left; }
-thead th { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-tbody tr:last-child td { border-bottom: 0; }
-td.fam { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: var(--bg); padding-block: 6px; }
-td .up { color: var(--good); font-weight: 600; }
-td .after { font-weight: 600; }
-.two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 22px; align-items: start; }
 pre.bib { margin: 0; font-family: var(--f-mono); font-size: 0.82rem; line-height: 1.55; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; overflow-x: auto; }
 .bibhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--rule); padding-top: 18px; }
 
 @media (max-width: 760px) {
   body { font-size: 16px; }
   .wrap { padding-inline: 16px; padding-block: 36px 56px; gap: 48px; }
   .figure { padding: 14px; }
-  .stage, .two { grid-template-columns: minmax(0, 1fr); }
-  .findings { grid-template-columns: minmax(0, 1fr); }
+  .stage { grid-template-columns: minmax(0, 1fr); }
   .triple { grid-template-columns: minmax(0, 1fr); }
   .step span { display: none; }
 }
@@ -210,56 +189,6 @@ footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--ru
     <p class="note">Bars: mean bidirectional retrieval accuracy (%), last layer, 10 negatives, mean of 3 seeds. Centroid distance in the plot is drawn from 1 − accuracy. The dots are a schematic of parallel sentences, not real embeddings.</p>
   </section>
 
-  <section>
-    <h2>In brief</h2>
-    <div class="prose">
-      <p>Multilingual encoders such as mBERT and XLM-R are widely used for code-mixed text, but it is unclear how their representations of code-mixed sentences relate to the two languages being mixed. We build a parallel corpus of 21,139 English, Hindi (Devanagari) and Romanized Hinglish sentence triples and probe six encoders with retrieval, CKA, token-level saliency and entropy-based uncertainty.</p>
-    </div>
-    <ol class="findings">
-      <li><h3>Code-mixed text sits on the periphery</h3><p>Off-the-shelf encoders align English and Hindi best. Code-mixed sentences are weakly anchored to either language: EN↔HI &gt; EN↔CM &gt; HI↔CM.</p></li>
-      <li><h3>Adaptation trades one gap for another</h3><p>Continued pretraining on Hinglish pulls code-mixed text toward English, but English–Hindi alignment drops. Models read code-mixed text through an English-dominant subspace, while native-script Hindi reduces uncertainty.</p></li>
-      <li><h3>Trilingual alignment restores balance</h3><p>A post-training loss that aligns all three pairs at once lifts CLAS for every model and improves cross-lingual consistency on sentiment and hate speech detection.</p></li>
-    </ol>
-  </section>
-
-  <section>
-    <h2>Trilingual post-training alignment</h2>
-    <div class="prose">
-      <p>We keep each encoder's original objective (MLM + NSP for mBERT, MLM for XLM-R) and add a cosine alignment term over the normalized <code>[CLS]</code> embeddings of each parallel triple (<i class="en">e</i>, <i class="hi">h</i>, <i class="cm">c</i>):</p>
-    </div>
-    <div class="eq">
-      <i>L</i> = <i>L</i><sub>base</sub> + λ · <i>L</i><sub>align</sub>,&nbsp;&nbsp; λ = 0.05<br>
-      <i>L</i><sub>align</sub> = ⅓ Σ<sub>(u,v) ∈ {(<span class="en">e</span>,<span class="hi">h</span>), (<span class="en">e</span>,<span class="cm">c</span>), (<span class="hi">h</span>,<span class="cm">c</span>)}</sub> &nbsp;1/B Σ<sub>i</sub> (1 − <b>u</b><sub>i</sub><sup>⊤</sup><b>v</b><sub>i</sub>)
-    </div>
-    <div class="prose">
-      <p>To score how evenly a model aligns the three pairs, we introduce the <b>Cross-Lingual Alignment Score</b>: CLAS = MeanAcc − DirBias − SetupStd. It rewards high retrieval accuracy and penalizes direction asymmetry and imbalance across EN↔HI, EN↔CM and HI↔CM.</p>
-    </div>
-  </section>
-
-  <section>
-    <h2>Results</h2>
-    <div class="two">
-      <div class="tablebox">
-        <table>
-          <thead><tr><th>Model (last layer)</th><th>CLAS</th><th>+ Trilingual</th><th>Δ</th></tr></thead>
-          <tbody id="clasRows"></tbody>
-        </table>
-      </div>
-      <div class="tablebox">
-        <table>
-          <thead><tr><th>Consistency</th><th>Sentiment</th><th>Hate</th></tr></thead>
-          <tbody>
-            <tr><td>mBERT</td><td>0.4012</td><td>0.5220</td></tr>
-            <tr><td>mBERT-Tri</td><td class="after">0.4898</td><td class="after">0.5953</td></tr>
-            <tr><td>XLM-R</td><td>0.5720</td><td>0.6307</td></tr>
-            <tr><td>XLM-R-Tri</td><td class="after">0.5986</td><td class="after">0.6701</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <p class="note">Left: CLAS from bidirectional retrieval with 10 negatives (mean of 3 seeds). Right: mean cross-lingual consistency across CM, EN and HI training settings on downstream tasks.</p>
-  </section>
-
   <section id="cite">
     <div class="bibhead"><h2>Citation</h2><button class="btn" id="copyBib">Copy BibTeX</button></div>
 <pre class="bib" id="bib">@article{mazumder2026neither,
@@ -272,7 +201,6 @@ footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--ru
 }</pre>
   </section>
 
-  <footer>Code, corpus and training scripts: <a href="https://github.com/debajyotimaz/tri_align_EMNLP_2026" target="_blank" rel="noopener">github.com/debajyotimaz/tri_align_EMNLP_2026</a></footer>
 </main>
 
 <script>
@@ -290,12 +218,6 @@ footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--ru
       { model: "Hing-RoBERTa Trilingual", ec: [81.43, 89.85], eh: [69.11, 76.70], hc: [63.84, 62.58], clas: 58.98 },
     ],
   };
-  const CLAS_TABLE = [
-    ["mBERT family"],
-    ["mBERT", 14.20, 50.97], ["Hing-mBERT", 17.01, 51.07], ["Hing-mBERT-Mixed", 34.95, 42.51],
-    ["XLM-R family"],
-    ["XLM-R", 39.53, 47.50], ["Hing-RoBERTa", 3.74, 58.98], ["Hing-RoBERTa-Mixed", 73.09, 73.50],
-  ];
   const CAPTIONS = [
     ["Neither here nor there", "Off-the-shelf encoders align English and Hindi, but code-mixed sentences sit on the periphery, weakly anchored to both."],
     ["Adaptation trades one gap for another", "Continued pretraining on Hinglish pulls code-mixed text toward English, while English–Hindi alignment falls apart."],
@@ -498,11 +420,6 @@ footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--ru
       segIdx = -1; clock = Math.floor(clock / P) * P;
     });
   }
-
-  // CLAS table
-  $("clasRows").innerHTML = CLAS_TABLE.map((r) => r.length === 1
-    ? `<tr><td class="fam" colspan="4">${r[0]}</td></tr>`
-    : `<tr><td>${r[0]}</td><td>${r[1].toFixed(2)}</td><td class="after">${r[2].toFixed(2)}</td><td><span class="up">+${(r[2] - r[1]).toFixed(2)}</span></td></tr>`).join("");
 
   $("copyBib").addEventListener("click", async () => {
     const txt = $("bib").textContent, btn = $("copyBib");
