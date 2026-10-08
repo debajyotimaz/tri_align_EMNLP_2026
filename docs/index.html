@@ -229,7 +229,7 @@ pre.bib { margin: 0; font-family: var(--f-mono); font-size: 0.82rem; line-height
   const TAGS = ["Stage 1 of 3 · off-the-shelf", "Stage 2 of 3 · code-mixed adapted", "Stage 3 of 3 · + trilingual alignment"];
 
   const mean = (p) => (p[0] + p[1]) / 2;
-  // Centroid triangle: EN and HI on a horizontal line, CM below; side length = 0.18 + (1 - acc).
+  // Language triangle: EN and HI on a horizontal line, CM below; side length = 0.18 + (1 - acc).
   function geometry(st) {
     const acc = { eh: mean(st.eh), ec: mean(st.ec), hc: mean(st.hc) };
     const d = (a) => 0.18 + (1 - a / 100);
@@ -237,7 +237,9 @@ pre.bib { margin: 0; font-family: var(--f-mono); font-size: 0.82rem; line-height
     const x = (dEC * dEC - dHC * dHC) / (2 * dEH);
     const y = Math.sqrt(Math.max(0, dEC * dEC - (x + dEH / 2) ** 2));
     const pts = [[-dEH / 2, 0], [dEH / 2, 0], [x, y]];
-    const cx = (pts[0][0] + pts[1][0] + pts[2][0]) / 3, cy = (pts[0][1] + pts[1][1] + pts[2][1]) / 3;
+    // center on the bounding box (not the centroid) so the zoom uses the full plot height
+    const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
     return { c: pts.flatMap(([px, py]) => [px - cx, py - cy]), acc: [acc.eh, acc.ec, acc.hc], clas: st.clas };
   }
   const VIEWS = {};
